@@ -5,3 +5,4 @@ dotenv
 langgraph
 plotly
 pymysql
+langchain_community
