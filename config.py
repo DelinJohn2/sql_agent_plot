@@ -1,86 +1,84 @@
 # config.py
 import os
-import streamlit as st
 from dotenv import load_dotenv
+
+# Try importing streamlit but don't fail if not available
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except Exception:
+    STREAMLIT_AVAILABLE = False
+
 from sqlalchemy import create_engine
 from langchain_openai import ChatOpenAI
 
-# Load .env file once
+# Load .env once
 load_dotenv(dotenv_path=".env")
 
 
 # ---------------------------------------------------------
-# UNIFIED SECRET RESOLVER
+# SAFE SECRET RESOLVER
 # ---------------------------------------------------------
 def get_secret(key: str, default=None):
     """
     Priority:
-    1. streamlit secrets
+    1. Streamlit secrets (ONLY if streamlit is running)
     2. .env
     3. default
     """
-    if key in st.secrets:
-        return st.secrets[key]
+    # Streamlit available AND secrets loaded
+    if STREAMLIT_AVAILABLE:
+        try:
+            if key in st.secrets:
+                return st.secrets[key]
+        except Exception:
+            pass  # st.secrets not available
+
+    # Fallback to .env
     value = os.getenv(key)
     return value if value is not None else default
 
 
 # ---------------------------------------------------------
-# LLM INITIALIZATION — SUPPORTS secrets + .env
+# LLM INITIALIZATION
 # ---------------------------------------------------------
 def build_llm():
-    # Required field
     api_key = get_secret("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "ERROR: OPENAI_API_KEY missing in both Streamlit secrets and .env"
-        )
 
-    # Optional configs
+    if not api_key:
+        # No error — return None gracefully
+        print("WARNING: OPENAI_API_KEY missing — LLM will not be created.")
+        return None
+
     model_name = get_secret("MODEL_NAME", "gpt-4.1")
     temperature = float(get_secret("TEMPERATURE", 0.0))
 
-    # Initialize ChatOpenAI
     llm = ChatOpenAI(
         api_key=api_key,
         model_name=model_name,
         temperature=temperature,
     )
 
-    # Fixes Pydantic model validation issue
+    # Fix for Pydantic
     llm.model_rebuild()
 
     return llm
 
 
 # ---------------------------------------------------------
-# DB CONNECTION — SUPPORTS secrets + .env
+# SQL CONNECTION (optional, no crash)
 # ---------------------------------------------------------
 def sql_connection():
-    """
-    Creates SQLAlchemy engine using combined secrets (.streamlit/secrets.toml)
-    and .env fallback.
-    """
-
     DB_USER = get_secret("DB_USER")
     DB_PASSWORD = get_secret("DB_PASSWORD")
     DB_HOST = get_secret("DB_HOST", "localhost")
     DB_PORT = int(get_secret("DB_PORT", 3306))
     DB_NAME = get_secret("DB_NAME")
 
-    # Validate required fields
-    required = {
-        "DB_USER": DB_USER,
-        "DB_PASSWORD": DB_PASSWORD,
-        "DB_NAME": DB_NAME,
-    }
-
-    missing = [key for key, val in required.items() if not val]
-    if missing:
-        raise ValueError(
-            f"ERROR: Missing required DB config keys: {missing} "
-            "Check your Streamlit secrets or .env file."
-        )
+    # Return None instead of raising
+    if not (DB_USER and DB_PASSWORD and DB_NAME):
+        print("WARNING: DB config incomplete — SQL engine not created.")
+        return None
 
     connection_string = (
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"

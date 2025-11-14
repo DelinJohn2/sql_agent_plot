@@ -1,15 +1,16 @@
 import logging
 from typing import Literal
 from langchain_community.utilities import SQLDatabase
-from my_Sql_connection import sql_connection
+
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from Openi_ai import build_llm
+
 from langgraph.prebuilt import ToolNode
 from langchain.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 
+from config import sql_connection,build_llm
 
 
 
