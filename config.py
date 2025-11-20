@@ -65,8 +65,7 @@ def build_llm():
     return llm
 
 
-# ---------------------------------------------------------
-# SQL CONNECTION (optional, no crash)
+
 # ---------------------------------------------------------
 def sql_connection():
     DB_USER = get_secret("DB_USER")
@@ -83,5 +82,24 @@ def sql_connection():
     connection_string = (
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
+    print(connection_string)
 
     return create_engine(connection_string)
+# from sqlalchemy import create_engine
+# import os
+
+# def sql_connection(db_path="test.db"):
+#     """
+#     Create a SQLite connection. If the DB file does not exist, it will be created.
+#     """
+
+#     # Ensure directory exists
+#     os.makedirs(os.path.dirname(db_path), exist_ok=True) if "/" in db_path else None
+
+#     try:
+#         engine = create_engine(f"sqlite:///{db_path}")
+#         print(f"✔ SQLite connected: {db_path}")
+#         return engine
+#     except Exception as e:
+#         print(f"❌ SQLite connection failed: {e}")
+#         return None

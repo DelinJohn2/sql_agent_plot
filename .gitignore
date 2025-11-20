@@ -25,5 +25,7 @@ TestResults.xml
 .json
 documents
 test.ipynb
-.csv
+*.csv
+*.txt
+*.db
 
