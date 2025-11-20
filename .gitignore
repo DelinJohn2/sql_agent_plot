@@ -28,4 +28,5 @@ test.ipynb
 *.csv
 *.txt
 *.db
-
+storage
+*.xlsx
